@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Feb 26 13:27:46 2020
+
+@author: karthik
+"""
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output
+
+import pandas as pd
+import numpy as np
+
+#Names = ['REF_DATE','GEO','Age Group','Sex','Primary types of cancer (ICD-O-3)',
+#         'Prevalence duration','Characteristics','VALUE']
+#
+#
+#Cancer_Data = pd.read_csv("Cancer_Data.csv",sep=',',usecols=['REF_DATE'])
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+Cancer_Data = pd.read_csv("/home/karthik/Downloads/canada_cancer_data.csv",sep=',')
+Column_Names = np.array(Cancer_Data.columns)
+Column_Names = Column_Names[2:len(Column_Names)-1]
+
+
+
+GeoNames = Cancer_Data['GEO'].unique()
+AgeGroup = Cancer_Data['Age Group'].unique()
+AgeLabel = {AgeGroup[0] : 'All ages', AgeGroup[1] : '0-19 years'}
+
+for s in AgeGroup[2:]: 
+    AgeLabel[s] = str(s) + '0-'+ str(s) +'9 years'
+
+#AgeLabel = { s : str(s) + '0-'+ str(s) +'9 years' for s in AgeGroup[2:]}
+
+Sex = Cancer_Data['Sex'].unique()
+CancerType = Cancer_Data['Primary types of cancer (ICD-O-3)'].unique()
+PrevalanceDuration = Cancer_Data['Prevalence duration'].unique()
+Characteristics = Cancer_Data['Characteristics'].unique()
+colors = {
+    'background': '#111121',
+    'text': '#7FDBFF'
+}
+
+
+
+app.layout = html.Div(style = {'backgroundColor':'white'},children=[
+        html.Div(children=[html.Img(src='https://www.uregina.ca/external/communications/assets/identity1/Primary_Logo/Full%20Colour/UR_Logo_Primary_Full_COlour_RGB.png')]),
+        html.Div(style= {'textAlign': 'center','color':'green'},children=[html.H1("Cancer Data")]),
+        html.Div(style = {'textAlign' : 'left', 'color' : 'blue'},children= [html.H2("Introduction")]),
+        html.Div(children = [html.P("We are currently analysing the Cancer Data from stats canada website")]),
+            html.Div([
+            html.Div(children=[html.Label("Legend This is currently dummy")]),
+    html.Div([
+
+        html.Div([
+            dcc.Dropdown(
+                id='Legend',
+                options=[{'label': i, 'value': i} for i in Column_Names],
+                value=Column_Names[1]
+            )
+        ],style={'width': '25%', 'display': 'inline-block'})
+        
+    ]),
+
+        html.Div([
+            dcc.Dropdown(
+                id='GEO',
+                options=[{'label': i, 'value': i} for i in GeoNames],
+                value='Canada'
+            )
+        ],
+        style={'width': '25%', 'display': 'inline-block'}),
+
+        html.Div([
+            dcc.Dropdown(
+                id='AgeGroup',
+                options=[{'label': i[1], 'value': i[0]} for i in AgeLabel.items()],
+                value= 0
+            )
+        ],
+        style={'width': '25%', 'display': 'inline-block'}),
+
+
+        html.Div([
+            dcc.Dropdown(
+                id='CancerType',
+                options=[{'label': i, 'value': i} for i in CancerType],
+                value= CancerType[0]
+            )
+        ],
+        style={'width': '40%', 'display': 'inline-block'})
+        
+    ]),
+    html.Div([
+
+        html.Div([
+            dcc.Dropdown(
+                id='Sex',
+                options=[{'label': i, 'value': i} for i in Sex],
+                value=Sex[0]
+            )
+        ],style={'width': '15%', 'display': 'inline-block'}),
+
+        html.Div([
+            dcc.Dropdown(
+                id='PrevalenceDuration',
+                options=[{'label': i, 'value': i} for i in PrevalanceDuration],
+                value= PrevalanceDuration[0]
+            )
+        ],
+        style={'width': '25%', 'display': 'inline-block'}),
+        html.Div([
+            dcc.Dropdown(
+                id='Characteristics',
+                options=[{'label': i, 'value': i} for i in Characteristics],
+                value=Characteristics[0]
+            )
+        ],style={'width': '40%', 'display': 'inline-block'})
+        
+    ]),
+    dcc.Graph(id='indicator-graphic'),
+#
+#    dcc.Slider(
+#        id='year--slider',
+#        min=df['Year'].min(),
+#        max=df['Year'].max(),
+#        value=df['Year'].max(),
+#        marks={str(year): str(year) for year in df['Year'].unique()},
+#        step=None
+#    )
+])
+
+
+@app.callback(
+    Output('indicator-graphic', 'figure'),
+    [Input('Legend', 'value'),
+     Input('GEO', 'value'),
+     Input('AgeGroup', 'value'),
+     Input('CancerType', 'value'),
+     Input('Sex', 'value'),
+     Input('PrevalenceDuration', 'value'),
+     Input('Characteristics', 'value')])
+def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characteristics):
+    dff = Cancer_Data[(Cancer_Data[Column_Names[0]]==geo) &
+                                (Cancer_Data[Column_Names[1]]==agegroup) &
+                                (Cancer_Data[Column_Names[2]]==sex) &
+                                (Cancer_Data[Column_Names[3]]==cancertype) &
+                                (Cancer_Data[Column_Names[4]]==prevalenceduration) &
+                                (Cancer_Data[Column_Names[5]]==characteristics)]
+    return {
+        'data': [dict(
+            x=dff["REF_DATE"],
+            y=dff["VALUE"],
+            line = dict(),
+            mode='lines+markers',
+            marker={
+                'size': 15,
+                'opacity': 0.5,
+                'line': {'width': 0.5, 'color': 'red'}
+            }
+        )],
+        'layout': dict(
+            xaxis={
+                'title': "YEAR"
+            },
+            yaxis={
+                'title': characteristics,
+            },
+            margin={'l': 40, 'b': 40, 't': 40, 'r': 0},
+            hovermode='closest',
+            #title = characteristics + " for a period of " + prevalenceduration + " in " + geo + " for " + sex + " between " + agegroup + " of age " 
+        )
+    }    
+    
+
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
