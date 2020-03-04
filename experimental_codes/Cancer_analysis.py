@@ -22,12 +22,23 @@ import pickle as pkl
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-pickle_file =open("MasterDict.pickle",'rb')
+pickle_file =open("../data/MasterDict.pickle",'rb')
 MasterDict = pkl.load(pickle_file)
 pickle_file.close()
-Cancer_Data = pd.read_csv("canada_cancer_data.zip",compression='zip',sep=',')
+Cancer_Data = pd.read_csv("../data/canada_cancer_data.zip",compression='zip',sep=',')
 Cancer_Data.drop(['Unnamed: 0'],axis=1,inplace=True)
 Column_Names = np.array(Cancer_Data.columns.values[1:-1],dtype=str)
+#print(Column_Names)
+
+def getEntries(group):
+    '''
+    
+    '''
+    name_dict = [{'label': i[0], 'value': i[1]} for i in group.items()]
+    name_dict.append({'label': 'ALL', 'value': 999})
+    return name_dict
+
+
 
 
 YEAR = MasterDict['YEAR']
@@ -58,7 +69,7 @@ background_url = "https://www.elsetge.cat/myimg/f/137-1377768_there-will-be-bloo
 
 selected_legend = ""
 def selected_legend_func(legend):
-    print(selected_legend)
+    #print(selected_legend)
     if(legend==selected_legend):
         return True
     else:
@@ -82,8 +93,6 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
         ],style={'width': '25%', 'display': 'inline-block'})
         
     ]),
-            html.Div(id='Legend-Status'),
-            html.Hr(),
 
         html.Div([
             dcc.Dropdown(
@@ -152,12 +161,6 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
 #        step=None
 #    )
 ])
-@app.callback(
-        Output('Legend-Status','children'),
-        [Input('Legend','value')])
-def Return(label_name):
-    selected_legend = label_name
-    return "You have chosen {}".format(selected_legend)
 
 
 @app.callback(
@@ -169,8 +172,71 @@ def Return(label_name):
      Input('Sex', 'value'),
      Input('PrevalenceDuration', 'value'),
      Input('Characteristics', 'value')])
+                
 def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characteristics):
-    dff = Cancer_Data[(Cancer_Data[Column_Names[0]]==geo) &
+    
+    legend_dict = {'GEO': geo, 'Age Group': agegroup, 'Sex':sex, 'Primary types of cancer (ICD-O-3)': cancertype,  'Prevalence duration': int(prevalenceduration), 'Characteristics': characteristics}
+    
+    traces = []
+    legend_list = list(legend_dict.keys())
+    legend_list.remove(label_name)
+    
+    
+    for k, i in enumerate(Cancer_Data[label_name].unique()):
+        dff = Cancer_Data[(Cancer_Data[legend_list[0]]==legend_dict[legend_list[0]]) &
+                          (Cancer_Data[legend_list[1]]==legend_dict[legend_list[1]]) &
+                          (Cancer_Data[legend_list[2]]==legend_dict[legend_list[2]]) &
+                          (Cancer_Data[legend_list[3]]==legend_dict[legend_list[3]]) &
+                          (Cancer_Data[legend_list[4]]==legend_dict[legend_list[4]]) &
+                          (Cancer_Data[label_name]==i)]
+        
+        traces.append(dict(
+                    x=dff["REF_DATE"],
+                    y=dff["VALUE"],
+                    line = {'color' : k,
+                            'dash' : 'longdashdot'},
+                    mode='lines+markers',
+                    marker={
+                            'symbol' : i,
+                        'size': 10,
+                        'opacity': 0.5,
+                        'line': {'width': 0.5, 'color':i}
+                    },
+                    name=i
+                    )
+                    )
+    
+    
+    
+    '''
+    
+    traces = []
+    if sex == 999:
+        for i in Cancer_Data['Sex'].unique():
+            dff = Cancer_Data[(Cancer_Data[Column_Names[0]]==geo) &
+                                        (Cancer_Data[Column_Names[1]]==agegroup) &
+                                        (Cancer_Data[Column_Names[2]]==i) &
+                                        (Cancer_Data[Column_Names[3]]==cancertype) &
+                                        (Cancer_Data[Column_Names[4]]==int(prevalenceduration)) &
+                                        (Cancer_Data[Column_Names[5]]==characteristics)]
+            
+            traces.append(dict(
+                    x=dff["REF_DATE"],
+                    y=dff["VALUE"],
+                    line = {'color' : 'red',
+                            'dash' : 'longdashdot'},
+                    mode='lines+markers',
+                    marker={
+                            'symbol' : 17,
+                        'size': 15,
+                        'opacity': 0.5,
+                        'line': {'width': 0.5, 'color': 'red'}
+                    },
+                    name=i
+                    )
+                    )
+    else:
+        dff = Cancer_Data[(Cancer_Data[Column_Names[0]]==geo) &
                                 (Cancer_Data[Column_Names[1]]==agegroup) &
                                 (Cancer_Data[Column_Names[2]]==sex) &
                                 (Cancer_Data[Column_Names[3]]==cancertype) &
@@ -182,20 +248,27 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
 #                                (Cancer_Data[Column_Names[3]]==0) &
 #                                (Cancer_Data[Column_Names[4]]==int('2')) &
 #                                (Cancer_Data[Column_Names[5]]=='P')]
+        
+        traces.append(dict(
+                    x=dff["REF_DATE"],
+                    y=dff["VALUE"],
+                    line = {'color' : 'red',
+                            'dash' : 'longdashdot'},
+                    mode='lines+markers',
+                    marker={
+                            'symbol' : 17,
+                        'size': 15,
+                        'opacity': 0.5,
+                        'line': {'width': 0.5, 'color': 'red'}
+                    }
+                    )
+                    )
+                
+    '''
+    
+    
     return {
-        'data': [dict(
-            x=dff["REF_DATE"],
-            y=dff["VALUE"],
-            line = {'color' : 'red',
-                    'dash' : 'longdashdot'},
-            mode='lines+markers',
-            marker={
-                    'symbol' : 17,
-                'size': 15,
-                'opacity': 0.5,
-                'line': {'width': 0.5, 'color': 'red'}
-            }
-        )],
+        'data': traces,
         'layout': dict(
             xaxis={
                 'title': "YEAR"
