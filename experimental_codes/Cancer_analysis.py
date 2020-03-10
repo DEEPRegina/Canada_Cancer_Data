@@ -9,10 +9,12 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
-
+import plotly.io as pio
 import pandas as pd
 import numpy as np
+import plotly.graph_objs as go
 import pickle as pkl
+pio.templates.default = "plotly_dark"
 #Names = ['REF_DATE','GEO','Age Group','Sex','Primary types of cancer (ICD-O-3)',
 #         'Prevalence duration','Characteristics','VALUE']
 #
@@ -32,7 +34,7 @@ Column_Names = np.array(Cancer_Data.columns.values[1:-1],dtype=str)
 
 def getEntries(group):
     '''
-    
+
     '''
     name_dict = [{'label': i[0], 'value': i[1]} for i in group.items()]
     name_dict.append({'label': 'ALL', 'value': 999})
@@ -91,7 +93,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
                 value=Column_Names[1]
             )
         ],style={'width': '25%', 'display': 'inline-block'})
-        
+
     ]),
 
         html.Div([
@@ -121,7 +123,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             )
         ],
         style={'width': '40%', 'display': 'inline-block'})
-        
+
     ]),
     html.Div([
 
@@ -148,9 +150,10 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
                 value='P',disabled=selected_legend_func(Column_Names[5])
             )
         ],style={'width': '40%', 'display': 'inline-block'})
-        
+
     ]),
-    dcc.Graph(id='indicator-graphic',style={'width': '50%', 'display': 'inline-block'}),
+    dcc.Graph(id='indicator-graphic',style={'width' : '100%','display': 'inline-block'}),
+    dcc.Graph(id='pie-graphic',style={'width' : '100%','height' : '800px','display' : 'inline-block'})
 #
 #    dcc.Slider(
 #        id='year--slider',
@@ -172,16 +175,16 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
      Input('Sex', 'value'),
      Input('PrevalenceDuration', 'value'),
      Input('Characteristics', 'value')])
-                
+
 def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characteristics):
-    
+
     legend_dict = {'GEO': geo, 'Age Group': agegroup, 'Sex':sex, 'Primary types of cancer (ICD-O-3)': cancertype,  'Prevalence duration': int(prevalenceduration), 'Characteristics': characteristics}
-    
+
     traces = []
     legend_list = list(legend_dict.keys())
     legend_list.remove(label_name)
-    
-    
+
+
     for k, i in enumerate(Cancer_Data[label_name].unique()):
         dff = Cancer_Data[(Cancer_Data[legend_list[0]]==legend_dict[legend_list[0]]) &
                           (Cancer_Data[legend_list[1]]==legend_dict[legend_list[1]]) &
@@ -189,7 +192,7 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
                           (Cancer_Data[legend_list[3]]==legend_dict[legend_list[3]]) &
                           (Cancer_Data[legend_list[4]]==legend_dict[legend_list[4]]) &
                           (Cancer_Data[label_name]==i)]
-        
+
         traces.append(dict(
                     x=dff["REF_DATE"],
                     y=dff["VALUE"],
@@ -202,71 +205,13 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
                         'opacity': 0.5,
                         'line': {'width': 0.5, 'color':i}
                     },
-                    name=i
+                    name=i,hoverinfo="GEO"
                     )
                     )
-    
-    
-    
-    '''
-    
-    traces = []
-    if sex == 999:
-        for i in Cancer_Data['Sex'].unique():
-            dff = Cancer_Data[(Cancer_Data[Column_Names[0]]==geo) &
-                                        (Cancer_Data[Column_Names[1]]==agegroup) &
-                                        (Cancer_Data[Column_Names[2]]==i) &
-                                        (Cancer_Data[Column_Names[3]]==cancertype) &
-                                        (Cancer_Data[Column_Names[4]]==int(prevalenceduration)) &
-                                        (Cancer_Data[Column_Names[5]]==characteristics)]
-            
-            traces.append(dict(
-                    x=dff["REF_DATE"],
-                    y=dff["VALUE"],
-                    line = {'color' : 'red',
-                            'dash' : 'longdashdot'},
-                    mode='lines+markers',
-                    marker={
-                            'symbol' : 17,
-                        'size': 15,
-                        'opacity': 0.5,
-                        'line': {'width': 0.5, 'color': 'red'}
-                    },
-                    name=i
-                    )
-                    )
-    else:
-        dff = Cancer_Data[(Cancer_Data[Column_Names[0]]==geo) &
-                                (Cancer_Data[Column_Names[1]]==agegroup) &
-                                (Cancer_Data[Column_Names[2]]==sex) &
-                                (Cancer_Data[Column_Names[3]]==cancertype) &
-                                (Cancer_Data[Column_Names[4]]==int(prevalenceduration)) &
-                                (Cancer_Data[Column_Names[5]]==characteristics)]
-#    dff = Cancer_Data[(Cancer_Data[Column_Names[0]]=='Canada') &
-#                                (Cancer_Data[Column_Names[1]]==0) &
-#                                (Cancer_Data[Column_Names[2]]=='B') &
-#                                (Cancer_Data[Column_Names[3]]==0) &
-#                                (Cancer_Data[Column_Names[4]]==int('2')) &
-#                                (Cancer_Data[Column_Names[5]]=='P')]
-        
-        traces.append(dict(
-                    x=dff["REF_DATE"],
-                    y=dff["VALUE"],
-                    line = {'color' : 'red',
-                            'dash' : 'longdashdot'},
-                    mode='lines+markers',
-                    marker={
-                            'symbol' : 17,
-                        'size': 15,
-                        'opacity': 0.5,
-                        'line': {'width': 0.5, 'color': 'red'}
-                    }
-                    )
-                    )
-                
-    '''
-    
-    
+
+
+
+
     return {
         'data': traces,
         'layout': dict(
@@ -278,11 +223,40 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
             },
             margin={'l': 40, 'b': 40, 't': 40, 'r': 0},
             hovermode='closest',
-            #title = characteristics + " for a period of " + prevalenceduration + " in " + geo + " for " + sex + " between " + agegroup + " of age " 
+            template = "plotly_dark"
+            #title = characteristics + " for a period of " + prevalenceduration + " in " + geo + " for " + sex + " between " + agegroup + " of age "
         )
-    }    
-    
+    }
 
+@app.callback(Output('pie-graphic','figure'),
+[Input('indicator-graphic','hoverData'),
+ Input('GEO', 'value'),
+ Input('AgeGroup', 'value'),
+ Input('Sex', 'value'),
+ Input('PrevalenceDuration', 'value'),
+ Input('Characteristics', 'value')])
+def Piechart(hoverData,geo,agegroup,sex,prevalenceduration,characteristics):
+
+    if(hoverData==None): Year = 2010
+    else: Year = hoverData['points'][0]['x']
+    dff = Cancer_Data[(Cancer_Data['GEO'] == geo) &
+    (Cancer_Data['Age Group'] == agegroup) &
+    (Cancer_Data['Sex'] == sex) &
+    (Cancer_Data['Prevalence duration'] == int(prevalenceduration)) &
+    (Cancer_Data['Characteristics'] == characteristics) &
+    (Cancer_Data['REF_DATE'] == Year) &
+    (Cancer_Data['Primary types of cancer (ICD-O-3)'] != 0)]
+    traces = []
+    traces.append(go.Pie(labels=dff['Primary types of cancer (ICD-O-3)'], values = dff['VALUE'],textinfo = 'label+percent',insidetextorientation='radial'))
+    return {
+        'data': traces,
+        'layout': dict(
+            margin={'l': 0, 'b': 0, 't': 0, 'r': 0},
+            hovermode='closest',
+            template = "plotly_dark"
+            #title = characteristics + " for a period of " + prevalenceduration + " in " + geo + " for " + sex + " between " + agegroup + " of age "
+        )
+    }
 
 
 if __name__ == '__main__':
