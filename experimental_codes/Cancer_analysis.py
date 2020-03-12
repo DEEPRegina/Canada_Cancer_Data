@@ -1,8 +1,8 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Feb 26 13:27:46 2020
-
 @author: karthik
 """
 import dash
@@ -21,25 +21,34 @@ pio.templates.default = "plotly_dark"
 #
 #Cancer_Data = pd.read_csv("Cancer_Data.csv",sep=',',usecols=['REF_DATE'])
 
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 pickle_file =open("../data/MasterDict.pickle",'rb')
 MasterDict = pkl.load(pickle_file)
 pickle_file.close()
-Cancer_Data = pd.read_csv("../data/canada_cancer_data.zip",compression='zip',sep=',')
-Cancer_Data.drop(['Unnamed: 0'],axis=1,inplace=True)
-Column_Names = np.array(Cancer_Data.columns.values[1:-1],dtype=str)
-#print(Column_Names)
 
+pickle_file = open("../data/MasterDictInverse.pickle",'rb')
+MasterDictInverse = pkl.load(pickle_file)
+pickle_file.close()
+
+Cancer_Data = pd.read_csv("../data/Cancer_Data_PreProcessed_v2.zip", compression='zip', sep=',')
+#print(Cancer_Data.columns)
+Cancer_Data.drop(['Unnamed: 0', 'Unnamed: 0.1'], axis=1,inplace=True)
+Column_Names = np.array(Cancer_Data.columns.values[1:-1],dtype=str)
+
+#print(Column_Names[:])
+
+radioItems = [Column_Names[0], Column_Names[1], Column_Names[2], Column_Names[4]]
+
+#print(MasterDict['CHARACTERISTICS'], MasterDictInverse['CHARACTERISTICS'])
 def getEntries(group):
     '''
-
     '''
     name_dict = [{'label': i[0], 'value': i[1]} for i in group.items()]
     name_dict.append({'label': 'ALL', 'value': 999})
     return name_dict
-
 
 
 
@@ -57,6 +66,19 @@ Sex = MasterDict['SEX']
 CancerType = MasterDict['CANCER_NAMES']
 
 Characteristics = MasterDict['CHARACTERISTICS']
+
+
+AgeGroupInverse = MasterDictInverse['AGE']
+
+PrevalanceDurationInverse = MasterDictInverse['PREVALENCE_DURATION']
+
+SexInverse = MasterDictInverse['SEX']
+
+CancerTypeInverse = MasterDictInverse['CANCER_NAMES']
+
+CharacteristicsInverse = MasterDictInverse['CHARACTERISTICS']
+
+
 colors = {
     'background': '#111121',
     'text': '#7FDBFF'
@@ -87,12 +109,13 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
     html.Div([
 
         html.Div([
-            dcc.Dropdown(
+            dcc.RadioItems(
                 id='Legend',
-                options=[{'label': i, 'value': i} for i in Column_Names],
-                value=Column_Names[1]
+                options=[{'label': i, 'value': i} for i in radioItems],
+                value=Column_Names[1],
+                labelStyle={'display': 'inline-block'}
             )
-        ],style={'width': '25%', 'display': 'inline-block'})
+        ])
 
     ]),
 
@@ -183,6 +206,10 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
     traces = []
     legend_list = list(legend_dict.keys())
     legend_list.remove(label_name)
+    
+    #curve_labels = MasterDict[label_name]
+    
+    #print(curve_labels)
 
 
     for k, i in enumerate(Cancer_Data[label_name].unique()):
@@ -205,7 +232,7 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
                         'opacity': 0.5,
                         'line': {'width': 0.5, 'color':i}
                     },
-                    name=i,hoverinfo="GEO"
+                    name=i, hoverinfo="GEO"
                     )
                     )
 
@@ -229,16 +256,17 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
     }
 
 @app.callback(Output('pie-graphic','figure'),
-[Input('indicator-graphic','hoverData'),
+[Input('indicator-graphic','clickData'),
  Input('GEO', 'value'),
  Input('AgeGroup', 'value'),
  Input('Sex', 'value'),
  Input('PrevalenceDuration', 'value'),
  Input('Characteristics', 'value')])
-def Piechart(hoverData,geo,agegroup,sex,prevalenceduration,characteristics):
+def Piechart(clickData,geo,agegroup,sex,prevalenceduration,characteristics):
 
-    if(hoverData==None): Year = 2010
-    else: Year = hoverData['points'][0]['x']
+    if(clickData==None): Year = 2010
+    else: Year = clickData['points'][0]['x']
+    print(clickData)
     dff = Cancer_Data[(Cancer_Data['GEO'] == geo) &
     (Cancer_Data['Age Group'] == agegroup) &
     (Cancer_Data['Sex'] == sex) &
@@ -247,7 +275,7 @@ def Piechart(hoverData,geo,agegroup,sex,prevalenceduration,characteristics):
     (Cancer_Data['REF_DATE'] == Year) &
     (Cancer_Data['Primary types of cancer (ICD-O-3)'] != 0)]
     traces = []
-    traces.append(go.Pie(labels=dff['Primary types of cancer (ICD-O-3)'], values = dff['VALUE'],textinfo = 'label+percent',insidetextorientation='radial'))
+    traces.append(go.Pie(labels=dff['Primary types of cancer (ICD-O-3)'], values = dff['VALUE'],textinfo = 'label+percent'))
     return {
         'data': traces,
         'layout': dict(
@@ -258,6 +286,7 @@ def Piechart(hoverData,geo,agegroup,sex,prevalenceduration,characteristics):
         )
     }
 
+xy=0
 
 if __name__ == '__main__':
     app.run_server(debug=True)
