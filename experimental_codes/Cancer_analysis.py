@@ -33,18 +33,18 @@ pickle_file = open("../data/MasterDictInverse.pickle",'rb')
 MasterDictInverse = pkl.load(pickle_file)
 pickle_file.close()
 
-Cancer_Data = pd.read_csv("../data/Cancer_Data_PreProcessed_v2.zip", compression='zip', sep=',')
+Cancer_Data = pd.read_csv("../data/cancerdata.zip", compression='zip', sep=',')
 #print(Cancer_Data.columns)
-Cancer_Data.drop(['Unnamed: 0', 'Unnamed: 0.1'], axis=1,inplace=True)
-Column_Names = np.array(Cancer_Data.columns.values[1:-1],dtype=str)
+#Column_Names = np.array(Cancer_Data.columns.values[1:-1],dtype=str)
 
 #print(Column_Names[:])
 
-radioItems = [Column_Names[0], Column_Names[1], Column_Names[2], Column_Names[4]]
+radioItems = ['Geo', 'AgeGroup', 'Sex', 'PrevalenceDuration']
 
 #print(MasterDict['CHARACTERISTICS'], MasterDictInverse['CHARACTERISTICS'])
 def getEntries(group):
     '''
+    Used to selectt the profiles to plot 
     '''
     name_dict = [{'label': i[0], 'value': i[1]} for i in group.items()]
     name_dict.append({'label': 'ALL', 'value': 999})
@@ -52,31 +52,31 @@ def getEntries(group):
 
 
 
-YEAR = MasterDict['YEAR']
+year = MasterDict['RefDate']
 
-GeoNames = MasterDict['GEO']
-
-
-AgeGroup = MasterDict['AGE']
-
-PrevalanceDuration = MasterDict['PREVALENCE_DURATION']
-
-Sex = MasterDict['SEX']
-
-CancerType = MasterDict['CANCER_NAMES']
-
-Characteristics = MasterDict['CHARACTERISTICS']
+GeoNames = MasterDict['Geo']
 
 
-AgeGroupInverse = MasterDictInverse['AGE']
+AgeGroup = MasterDict['AgeGroup']
 
-PrevalanceDurationInverse = MasterDictInverse['PREVALENCE_DURATION']
+PrevalanceDuration = MasterDict['PrevalenceDuration']
 
-SexInverse = MasterDictInverse['SEX']
+Sex = MasterDict['Sex']
 
-CancerTypeInverse = MasterDictInverse['CANCER_NAMES']
+CancerType = MasterDict['PrimaryCancer']
 
-CharacteristicsInverse = MasterDictInverse['CHARACTERISTICS']
+Characteristics = MasterDict['Characteristics']
+
+
+AgeGroupInverse = MasterDictInverse['AgeGroup']
+
+PrevalanceDurationInverse = MasterDictInverse['PrevalenceDuration']
+
+SexInverse = MasterDictInverse['Sex']
+
+CancerTypeInverse = MasterDictInverse['PrimaryCancer']
+
+CharacteristicsInverse = MasterDictInverse['Characteristics']
 
 
 colors = {
@@ -91,13 +91,6 @@ We are currently analysing the Cancer Data from stats canada website'''
 
 background_url = "https://www.elsetge.cat/myimg/f/137-1377768_there-will-be-blood-wallpaper-hd-cancer-cells.png"
 
-selected_legend = ""
-def selected_legend_func(legend):
-    #print(selected_legend)
-    if(legend==selected_legend):
-        return True
-    else:
-        return False
 
 app.layout = html.Div(style = {'background-image':'url({})'.format(background_url)},children=[
 #        html.Div(children=[html.Img(src='https://www.uregina.ca/external/communications/assets/identity1/Primary_Logo/Full%20Colour/UR_Logo_Primary_Full_COlour_RGB.png',width="200", height="100")]),
@@ -112,7 +105,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             dcc.RadioItems(
                 id='Legend',
                 options=[{'label': i, 'value': i} for i in radioItems],
-                value=Column_Names[1],
+                value=radioItems[1],
                 labelStyle={'display': 'inline-block'}
             )
         ])
@@ -123,7 +116,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             dcc.Dropdown(
                 id='GEO',
                 options=[{'label': i[0], 'value': i[1]} for i in GeoNames.items()],
-                value='Canada',disabled=selected_legend_func('GEO')
+                value='Canada'
             )
         ],
         style={'width': '25%', 'display': 'inline-block'}),
@@ -132,7 +125,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             dcc.Dropdown(
                 id='AgeGroup',
                 options=[{'label': i[0], 'value': i[1]} for i in AgeGroup.items()],
-                value=0,disabled=selected_legend_func(Column_Names[1])
+                value=0
             )
         ],
         style={'width': '25%', 'display': 'inline-block'}),
@@ -142,7 +135,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             dcc.Dropdown(
                 id='CancerType',
                 options=[{'label': i[0], 'value': i[1]} for i in CancerType.items()],
-                value=0,disabled=selected_legend_func(Column_Names[3])
+                value=0
             )
         ],
         style={'width': '40%', 'display': 'inline-block'})
@@ -154,7 +147,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             dcc.Dropdown(
                 id='Sex',
                 options=[{'label': i[0], 'value': i[1]} for i in Sex.items()],
-                value='B',disabled=selected_legend_func(Column_Names[2])
+                value='F'
             )
         ],style={'width': '15%', 'display': 'inline-block'}),
 
@@ -162,7 +155,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             dcc.Dropdown(
                 id='PrevalenceDuration',
                 options=[{'label': i[0], 'value': int(i[1])} for i in PrevalanceDuration.items()],
-                value= '2',disabled=selected_legend_func(Column_Names[4])
+                value= '2'
             )
         ],
         style={'width': '25%', 'display': 'inline-block'}),
@@ -170,7 +163,7 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
             dcc.Dropdown(
                 id='Characteristics',
                 options=[{'label': i[0], 'value': i[1]} for i in Characteristics.items()],
-                value='P',disabled=selected_legend_func(Column_Names[5])
+                value='P'
             )
         ],style={'width': '40%', 'display': 'inline-block'})
 
@@ -180,10 +173,10 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
 #
 #    dcc.Slider(
 #        id='year--slider',
-#        min=df['Year'].min(),
-#        max=df['Year'].max(),
-#        value=df['Year'].max(),
-#        marks={str(year): str(year) for year in df['Year'].unique()},
+#        min=df['year'].min(),
+#        max=df['year'].max(),
+#        value=df['year'].max(),
+#        marks={str(year): str(year) for year in df['year'].unique()},
 #        step=None
 #    )
 ])
@@ -199,9 +192,9 @@ app.layout = html.Div(style = {'background-image':'url({})'.format(background_ur
      Input('PrevalenceDuration', 'value'),
      Input('Characteristics', 'value')])
 
-def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characteristics):
+def Graph(label_name, geo, agegroup, cancertype, sex, prevalenceduration, characteristics):
 
-    legend_dict = {'GEO': geo, 'Age Group': agegroup, 'Sex':sex, 'Primary types of cancer (ICD-O-3)': cancertype,  'Prevalence duration': int(prevalenceduration), 'Characteristics': characteristics}
+    legend_dict = {'Geo': geo, 'AgeGroup': agegroup, 'Sex':sex, 'PrimaryCancer': cancertype,  'PrevalenceDuration': int(prevalenceduration), 'Characteristics': characteristics}
 
     traces = []
     legend_list = list(legend_dict.keys())
@@ -219,10 +212,14 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
                           (Cancer_Data[legend_list[3]]==legend_dict[legend_list[3]]) &
                           (Cancer_Data[legend_list[4]]==legend_dict[legend_list[4]]) &
                           (Cancer_Data[label_name]==i)]
+        
+        dff.head()
+        
+        #print('Reached here')
 
         traces.append(dict(
-                    x=dff["REF_DATE"],
-                    y=dff["VALUE"],
+                    x=dff["RefDate"],
+                    y=dff["Value"],
                     line = {'color' : k,
                             'dash' : 'longdashdot'},
                     mode='lines+markers',
@@ -232,7 +229,7 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
                         'opacity': 0.5,
                         'line': {'width': 0.5, 'color':i}
                     },
-                    name=i, hoverinfo="GEO"
+                    name=MasterDictInverse[label_name][i], hoverinfo="Geo"
                     )
                     )
 
@@ -243,10 +240,10 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
         'data': traces,
         'layout': dict(
             xaxis={
-                'title': "YEAR"
+                'title': "year"
             },
             yaxis={
-                'title':  characteristics
+                'title':  MasterDictInverse['Characteristics'][characteristics]
             },
             margin={'l': 40, 'b': 40, 't': 40, 'r': 0},
             hovermode='closest',
@@ -262,27 +259,55 @@ def Graph(label_name,geo,agegroup,cancertype,sex,prevalenceduration,characterist
  Input('Sex', 'value'),
  Input('PrevalenceDuration', 'value'),
  Input('Characteristics', 'value')])
+                
 def Piechart(clickData,geo,agegroup,sex,prevalenceduration,characteristics):
 
-    if(clickData==None): Year = 2010
-    else: Year = clickData['points'][0]['x']
+    if(clickData==None): year = 2010
+    else: year = clickData['points'][0]['x']
     print(clickData)
-    dff = Cancer_Data[(Cancer_Data['GEO'] == geo) &
-    (Cancer_Data['Age Group'] == agegroup) &
+    dff = Cancer_Data[(Cancer_Data['Geo'] == geo) &
+    (Cancer_Data['AgeGroup'] == agegroup) &
     (Cancer_Data['Sex'] == sex) &
-    (Cancer_Data['Prevalence duration'] == int(prevalenceduration)) &
+    (Cancer_Data['PrevalenceDuration'] == int(prevalenceduration)) &
     (Cancer_Data['Characteristics'] == characteristics) &
-    (Cancer_Data['REF_DATE'] == Year) &
-    (Cancer_Data['Primary types of cancer (ICD-O-3)'] != 0)]
+    (Cancer_Data['RefDate'] == year) &
+    (Cancer_Data['PrimaryCancer'] != 0) &
+    (Cancer_Data['Value'] > 0)    
+    ]
     traces = []
-    traces.append(go.Pie(labels=dff['Primary types of cancer (ICD-O-3)'], values = dff['VALUE'],textinfo = 'label+percent'))
+    
+    #print(list(MasterDictInverse['PrimaryCancer'].values()))
+    #print(len(dff['Value'].values))    
+    
+    #print(len(dff["PrimaryCancer"].replace(MasterDictInverse['PrimaryCancer']).values))
+    
+    #dff = dff[dff['Value'].values > 1]
+    
+    traces.append(
+            go.Pie(labels=dff["PrimaryCancer"].replace(MasterDictInverse['PrimaryCancer']),
+                   values = dff['Value'], 
+                   textinfo = 'label+percent',
+                   textposition = 'inside',
+                   hole = 0.3
+                   )
+            )
+    
+    title = "Distribution of different types of cancers with a prevalence of \n" + str(MasterDictInverse["PrevalenceDuration"][str(prevalenceduration)]) +  "in" + MasterDictInverse["Geo"][geo] + "\n the for a year" + str(MasterDictInverse["RefDate"][year]) + " for " + MasterDictInverse["Sex"][sex] + "\n belonging to " + MasterDictInverse["AgeGroup"][agegroup] + " of age."
+    
     return {
         'data': traces,
         'layout': dict(
             margin={'l': 0, 'b': 0, 't': 0, 'r': 0},
             hovermode='closest',
-            template = "plotly_dark"
-            #title = characteristics + " for a period of " + prevalenceduration + " in " + geo + " for " + sex + " between " + agegroup + " of age "
+            template = "plotly_dark",
+            title = {'text':title, 
+                     'xanchor': 'left',
+                     'yanchor': 'top',
+                     'x': 0.0,
+                     'y': 0.8
+                     },
+            uniformtext_minsize = 12,
+            uniformtext_mode = "hide"
         )
     }
 
