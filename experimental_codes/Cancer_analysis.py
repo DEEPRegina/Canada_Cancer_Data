@@ -92,7 +92,8 @@ We are currently analysing the Cancer Data from stats canada website'''
 background_url = "https://www.elsetge.cat/myimg/f/137-1377768_there-will-be-blood-wallpaper-hd-cancer-cells.png"
 
 
-app.layout = html.Div(style = {'background-image':'url({})'.format(background_url)},children=[
+app.layout = html.Div(style = {'background-image':'url({})'.format(background_url)},
+                      children=[
 #        html.Div(children=[html.Img(src='https://www.uregina.ca/external/communications/assets/identity1/Primary_Logo/Full%20Colour/UR_Logo_Primary_Full_COlour_RGB.png',width="200", height="100")]),
         html.Div(style= {'textAlign': 'center','color':'white'},children=[html.H1("Cancer Data Analysis",className='Custom_Header')]),
         html.Div(style = {'textAlign' : 'left', 'color' : 'white'},children= [html.H2("Introduction",className='Custom_H2')]),
@@ -247,7 +248,8 @@ def Graph(label_name, geo, agegroup, cancertype, sex, prevalenceduration, charac
             },
             margin={'l': 40, 'b': 40, 't': 40, 'r': 0},
             hovermode='closest',
-            template = "plotly_dark"
+            template = "plotly_dark",
+            paper_bgcolor = '#fff'
             #title = characteristics + " for a period of " + prevalenceduration + " in " + geo + " for " + sex + " between " + agegroup + " of age "
         )
     }
